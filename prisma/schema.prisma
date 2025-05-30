@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vessel {
+  id          Int    @id @default(autoincrement())
+  name        String
+  imoNo       Int    @unique
+  vesselType  Int
+
+  // Внимание! В исходном файле vessels.json отсутствует DWT (Deadweight Tonnage),
+  // однако утилита calculatePPSCCBaselines требует DWT для корректного расчета baseline.
+  // Для целей тестовой задачи здесь добавлено поле dwt с заглушкой по умолчанию.
+  // После доработки данных — заменить заглушку на реальное значение!
+  dwt         Float  @default(50000)
+
+  dailyLogs   DailyLogEmission[]
+}
+
+model DailyLogEmission {
+  id              Int      @id @default(autoincrement())
+  eid             Int
+  vessel          Vessel   @relation(fields: [vesselId], references: [imoNo])
+  vesselId        Int
+  logId           BigInt
+  fromUTC         DateTime
+  toUTC           DateTime
+
+  aerco2t2w       Float
+  aerco2eW2w      Float
+  eeoico2eW2w     Float
+  totT2wco2       Float
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PPReference {
+  id             Int    @id @default(autoincrement())
+  rowId          Int
+  category       String
+  vesselTypeId   Int
+  size           String
+  traj           String
+
+  a              Float
+  b              Float
+  c              Float
+  d              Float
+  e              Float
+}
